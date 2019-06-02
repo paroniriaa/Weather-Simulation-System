@@ -1,4 +1,5 @@
 import {tiny, defs} from './assignment-4-resources.js';
+import { Shape_From_File } from './obj-file-demo.js'
                                                                 // Pull these names into this module's scope for convenience:
 const { Vec, Mat, Mat4, Color, Light, Shape, Shader, Material, Texture,
          Scene, Canvas_Widget, Code_Widget, Text_Widget } = tiny;
@@ -25,8 +26,8 @@ class Tortoise_World extends Scene
                      'star' : new Planar_Star(),
                  'tree_stem': new Shape_From_File( "assets/MapleTreeStem.obj" ),
                'tree_leaves': new Shape_From_File( "assets/MapleTreeLeaves.obj" ),
-                     'grass':     new Shape_From_File( "assets/Grass_03.obj"),
-                      'rock':      new Shape_From_File( "assets/Rock.obj"), };
+                     'grass': new Shape_From_File( "assets/Grass_03.obj"),
+                      'rock': new Shape_From_File( "assets/Rock.obj"), };
 
                                                         // TODO (#1d): Modify one sphere shape's existing texture 
                                                         // coordinates in place.  Multiply them all by 5.
@@ -69,16 +70,20 @@ class Tortoise_World extends Scene
                           ground: new Material( texture_shader_2,
                                     { ambient: .40, texture: new Texture( "assets/ground_texture.jpeg") } ),
                        tree_stem: new Material( texture_shader_2,
-                                     { ambient: .9, diffusivity: .5, specularity: .5, color: Color.of( 70/255, 50/255, 5/255,1 )} ),
+                                    { ambient: .9, diffusivity: .5, specularity: .5, color: Color.of( 70/255, 50/255, 5/255,1 )} ),
                      tree_leaves: new Material( texture_shader_2,
-                                     { ambient: .7, diffusivity: .5, specularity: .5, color: Color.of( 0,.6,0,1 )} ),
+                                    { ambient: .7, diffusivity: .5, specularity: .5, color: Color.of( 0,.6,0,1 )} ),
+                           grass: new Material( texture_shader_2,    
+                                    { texture: new Texture( "assets/Grass.png" ),
+                                      ambient: 1, diffusivity: 1, specularity: 0} ),//, color: Color.of( .4,.4,.4,1 )} ),
                             rock: new Material( texture_shader_2,
-                                     { ambient: .5, diffusivity: .5, specularity: .5, color: Color.of( 86/255, 64/255, 29/255,1 )} )
+                                    { texture: new Texture( "assets/rock_tex.jpg" ),
+                                      ambient: .5, diffusivity: .5, specularity: .5, color: Color.of( 86/255, 64/255, 29/255,1 )} )
                        };
 
                                   // Some setup code that tracks whether the "lights are on" (the stars), and also
                                   // stores 30 random location matrices for drawing stars behind the solar system:
-      this.lights_on = false;
+      this.lights_on = true;
       this.star_matrices = [];
       for( let i=0; i<30; i++ )
         this.star_matrices.push( Mat4.rotation( Math.PI/2 * (Math.random()-.5), Vec.of( 0,1,0 ) )
@@ -111,7 +116,7 @@ class Tortoise_World extends Scene
                     // treated when projecting 3D points onto a plane.  The Mat4 functions perspective() and
                     // orthographic() automatically generate valid matrices for one.  The input arguments of
                     // perspective() are field of view, aspect ratio, and distances to the near plane and far plane.          
-          program_state.set_camera( Mat4.look_at( Vec.of( 0,10,20 ), Vec.of( 0,0,0 ), Vec.of( 0,1,0 ) ) );
+          program_state.set_camera( Mat4.look_at( Vec.of( 10,-30,15 ), Vec.of( 0,0,0 ), Vec.of( 0,0,1 ) ) );
           this.initial_camera_location = program_state.camera_inverse;
           program_state.projection_transform = Mat4.perspective( Math.PI/4, context.width/context.height, 1, 200 );
         }
@@ -172,10 +177,6 @@ class Tortoise_World extends Scene
                             // new value based on our light switch.                         
       const modifier = this.lights_on ? { ambient: 0.3 } : { ambient: 0.0 };
 
-      this.ground_Matrix = Mat4.identity();
-      this.ground_Matrix = this.ground_Matrix.times( Mat4.translation([0, 0, 1]))
-                                             .times( Mat4.scale([42.6, 42.6, .01]));
-
       this.tree_Matrix = Mat4.identity();
       this.tree_Matrix = this.tree_Matrix.times( Mat4.rotation( 1.6, Vec.of( 1, 0, 0)))
                                          .times( Mat4.translation([-13, 5.5, -7 ]))
@@ -197,6 +198,170 @@ class Tortoise_World extends Scene
                                         .times( Mat4.translation([ -0, -7, 11 ]))
                                         .times (Mat4.scale([8, 2, 2]));
       this.shapes.rock.draw( context, program_state, this.rock_Matrix, this.materials.rock);
+
+/*
+      this.ground_Matrix = Mat4.identity();
+      this.ground_Matrix = this.ground_Matrix.times( Mat4.translation([0, 0, 1]))
+                                             .times( Mat4.scale([42.6, 42.6, .01]));
+
+      
+*/
+/*
+      for(var i = -33; i < -2; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10 + i/7 + 0.2 * Math.sin(0.5 * t),-3.5,i])).times(Mat4.scale([10,10,10])), this.materials.tree_leaves.override( { color: Color.of( .165,.298,0,1 )}));
+      }
+      for(var i = -34; i < -2; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5 + 0.2 * Math.sin(t),-3.5,i])).times(Mat4.scale([10,16,10])), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = -35; i < -2; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5,-3.5,i])).times(Mat4.scale([10,9,10])), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10,-3.5,13])).times(Mat4.scale([10,10,10])), this.materials.tree_leaves.override( { color: Color.of( .165,1.298,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12,-3.5,13])).times(Mat4.scale([10,9,10])), this.materials.tree_leaves.override( { color: Color.of( .67,1.90,.40,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([13,-3.5,13.5])).times(Mat4.scale([10,9,10])), this.materials.tree_leaves.override( { color: Color.of( .67,1.90,.40,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12,-3.5,13])).times(Mat4.scale([10,16,10])), this.materials.tree_leaves.override( { color: Color.of( .33,1.60,0,1 )} ));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([11,-5,13])).times(Mat4.scale([10,16,10])), this.materials.tree_leaves.override( { color: Color.of( .33,1.60,0,1 )}));
+
+      
+
+      for(var i = 14; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10 + i/7 + 0.2 * Math.sin(0.5 * t),-3.5,i])).times(Mat4.scale([10,10,10])), this.materials.tree_leaves.override( { color: Color.of( .165,.298,0,1 )}));
+      }
+      for(var i = 15; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5 + 0.2 * Math.sin(t),-3.5,i])).times(Mat4.scale([10,16,10])), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = 16; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5,-3.5,i])).times(Mat4.scale([10,9,10])), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      for(var i = 0; i < 9; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5 + 0.2 * Math.sin(t)])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = -1; i < 8; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/7 + 0.2 * Math.sin(0.5* t)])).times(Mat4.scale([10,10,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .165,.298,0,1 )}));
+      }
+      for(var i = -2; i < 7; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+      for(var i = 21.5; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5 + 0.2 * Math.sin(t)])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = 24; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/7 + 0.2 * Math.sin(0.5* t)])).times(Mat4.scale([10,10,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .165,.298,0,1 )}));
+      }
+      for(var i = 23; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([2.5,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+
+      for(var i = 2; i < 15; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([2 - i,-3.5, 0 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([25,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([25,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([15,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([16,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-7,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-8,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+*/
+
+      for(var i = -73; i < 25; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10 + i/7 + 0.2 * Math.sin(0.5 * t),-3.5,i])).times(Mat4.scale([10,10,10])), this.materials.grass);
+      }
+      for(var i = -74; i < 25; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5 + 0.2 * Math.sin(t),-3.5,i])).times(Mat4.scale([10,16,10])), this.materials.grass);
+      }
+      for(var i = -75; i < 25; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5,-3.5,i])).times(Mat4.scale([10,9,10])), this.materials.grass);
+      }
+/*
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10,-3.5,13])).times(Mat4.scale([10,10,10])), this.materials.grass);
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12,-3.5,13])).times(Mat4.scale([10,9,10])), this.materials.grass);
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([13,-3.5,13.5])).times(Mat4.scale([10,9,10])), this.materials.grass);
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12,-3.5,13])).times(Mat4.scale([10,16,10])), this.materials.grass);
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([11,-5,13])).times(Mat4.scale([10,16,10])), this.materials.grass);
+
+
+      for(var i = 14; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([10 + i/7 + 0.2 * Math.sin(0.5 * t),-3.5,i])).times(Mat4.scale([10,10,10])), this.materials.grass);
+      }
+      for(var i = 15; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5 + 0.2 * Math.sin(t),-3.5,i])).times(Mat4.scale([10,16,10])), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = 16; i < 40; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([12 + i/5,-3.5,i])).times(Mat4.scale([10,9,10])), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+*/
+      for(var i = -60; i < 0; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5 + 0.2 * Math.sin(t)])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.grass);
+      }
+      for(var i = -61; i < 0; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/7 + 0.2 * Math.sin(0.5* t)])).times(Mat4.scale([10,10,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.grass);
+      }
+      for(var i = -62; i < 0; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.grass);
+      }
+
+/*
+      for(var i = 21.5; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5 + 0.2 * Math.sin(t)])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      }
+      for(var i = 24; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/7 + 0.2 * Math.sin(0.5* t)])).times(Mat4.scale([10,10,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .165,.298,0,1 )}));
+      }
+      for(var i = 23; i < 36; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-5 + i,-3.5,-5 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/2, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([2.5,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+
+      for(var i = 2; i < 15; i+=3)
+      {
+            this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([2 - i,-3.5, 0 + i/5])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+      }
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([25,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([25,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([15,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([16,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-7,-3.5, 0])).times(Mat4.scale([10,16,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .33,.60,0,1 )}));
+      this.shapes.grass.draw( context, program_state, this.tree_Matrix.times(Mat4.translation([-8,-3.5, 0])).times(Mat4.scale([10,9,10])).times(Mat4.rotation(3 * Math.PI/4, Vec.of(0,1,0))), this.materials.tree_leaves.override( { color: Color.of( .67,.90,.40,1 )}));
+*/
+      
+
+      
       
 
                                                 // TODO (#3d):   Draw the sun using its matrix (crated by you above) and material.
@@ -228,7 +393,7 @@ class Tortoise_World extends Scene
 
       // ***** BEGIN TEST SCENE *****               
                                           // TODO:  Delete (or comment out) the rest of display(), starting here:
-
+      /*
       program_state.set_camera( Mat4.translation([ 0,3,-10 ]) );
       const angle = Math.sin( t );
       const light_position = Mat4.rotation( angle, [ 1,0,0 ] ).times( Vec.of( 0,-1,1,0 ) );
@@ -242,7 +407,7 @@ class Tortoise_World extends Scene
                              .times( Mat4.scale      ([ 1,   2, 1 ]) )
                              .times( Mat4.translation([ 0,-1.5, 0 ]) ) );
       this.shapes.box.draw( context, program_state, model_transform, this.materials.plastic_stars.override( yellow ) );
-
+*/
       // ***** END TEST SCENE *****
 
       // Warning: Get rid of the test scene, or else the camera position and movement will not work.
