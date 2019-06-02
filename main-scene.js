@@ -10,7 +10,7 @@ const { Cube, Subdivision_Sphere, Transforms_Sandbox_Base } = defs;
 // (Can define Main_Scene's class here)
 
 const Main_Scene =
-class Solar_System extends Scene
+class Tortoise_World extends Scene
 {                                             // **Solar_System**:  Your Assingment's Scene.
   constructor()
     {                  // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -22,7 +22,11 @@ class Solar_System extends Scene
                                                 // TODO (#1):  Complete this list with any additional shapes you need.
       this.shapes = { 'box' : new Cube(),
                    'ball_4' : new Subdivision_Sphere( 4 ),
-                     'star' : new Planar_Star() };
+                     'star' : new Planar_Star(),
+                 'tree_stem': new Shape_From_File( "assets/MapleTreeStem.obj" ),
+               'tree_leaves': new Shape_From_File( "assets/MapleTreeLeaves.obj" ),
+                     'grass':     new Shape_From_File( "assets/Grass_03.obj"),
+                      'rock':      new Shape_From_File( "assets/Rock.obj"), };
 
                                                         // TODO (#1d): Modify one sphere shape's existing texture 
                                                         // coordinates in place.  Multiply them all by 5.
@@ -61,7 +65,15 @@ class Solar_System extends Scene
                                     { texture: new Texture( "assets/earth.gif" ),
                                       ambient: 0, diffusivity: 1, specularity: 1, color: Color.of( .4,.4,.4,1 ) } ),
                       black_hole: new Material( black_hole_shader ),
-                             sun: new Material( sun_shader, { ambient: 1, color: Color.of( 0,0,0,1 ) } )
+                             sun: new Material( sun_shader, { ambient: 1, color: Color.of( 0,0,0,1 ) } ),
+                          ground: new Material( texture_shader_2,
+                                    { ambient: .40, texture: new Texture( "assets/ground_texture.jpeg") } ),
+                       tree_stem: new Material( texture_shader_2,
+                                     { ambient: .9, diffusivity: .5, specularity: .5, color: Color.of( 70/255, 50/255, 5/255,1 )} ),
+                     tree_leaves: new Material( texture_shader_2,
+                                     { ambient: .7, diffusivity: .5, specularity: .5, color: Color.of( 0,.6,0,1 )} ),
+                            rock: new Material( texture_shader_2,
+                                     { ambient: .5, diffusivity: .5, specularity: .5, color: Color.of( 86/255, 64/255, 29/255,1 )} )
                        };
 
                                   // Some setup code that tracks whether the "lights are on" (the stars), and also
@@ -159,6 +171,33 @@ class Solar_System extends Scene
                             // generate a new one that uses the below modifier, replacing the ambient term with a 
                             // new value based on our light switch.                         
       const modifier = this.lights_on ? { ambient: 0.3 } : { ambient: 0.0 };
+
+      this.ground_Matrix = Mat4.identity();
+      this.ground_Matrix = this.ground_Matrix.times( Mat4.translation([0, 0, 1]))
+                                             .times( Mat4.scale([42.6, 42.6, .01]));
+
+      this.tree_Matrix = Mat4.identity();
+      this.tree_Matrix = this.tree_Matrix.times( Mat4.rotation( 1.6, Vec.of( 1, 0, 0)))
+                                         .times( Mat4.translation([-13, 5.5, -7 ]))
+                                          .times( Mat4.scale([1.5, 1.5, 1.5]));
+
+      this.tree_Matrix2 = Mat4.identity();
+      this.tree_Matrix2 = this.tree_Matrix2.times( Mat4.rotation( 1.6, Vec.of( 1, 0, 0)))
+                                           .times( Mat4.translation([-15, 9, -5 ]))
+                                           .times( Mat4.scale([4, 4, 4]));
+      this.shapes.tree_stem.draw( context, program_state, this.tree_Matrix2, this.materials.tree_stem);
+      this.shapes.tree_leaves.draw( context, program_state, this.tree_Matrix2, this.materials.tree_leaves);  
+
+      this.tree_Matrix1 = this.tree_Matrix.times( Mat4.translation([21, 0, 0 ]))
+                                          .times( Mat4.scale([1.5, 1.5, 1.5]));
+      this.shapes.tree_stem.draw( context, program_state, this.tree_Matrix1, this.materials.tree_stem);
+      this.shapes.tree_leaves.draw( context, program_state, this.tree_Matrix1, this.materials.tree_leaves.override( { color: Color.of( .3,.6,.2,1 )}));
+
+      this.rock_Matrix = Mat4.identity().times( Mat4.rotation( 1.6, Vec.of( 0, 1, -.1)))
+                                        .times( Mat4.translation([ -0, -7, 11 ]))
+                                        .times (Mat4.scale([8, 2, 2]));
+      this.shapes.rock.draw( context, program_state, this.rock_Matrix, this.materials.rock);
+      
 
                                                 // TODO (#3d):   Draw the sun using its matrix (crated by you above) and material.
      
