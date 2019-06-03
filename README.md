@@ -1,4 +1,4 @@
-# Final PRoject
+# Final Project
 UCLA CS 174A  
 Group Number: 11  
 Team members: Aaron Chang, Junjie Zhu, Yu-Hsuan Liu  
