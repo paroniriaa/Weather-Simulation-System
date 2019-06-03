@@ -301,7 +301,6 @@ class Gouraud_Shader extends defs.Phong_Shader
                           // fragment is to each extreme corner point (vertex).
 
       return `
-
       ` ;
     }
   vertex_glsl_code()           // ********* VERTEX SHADER *********
@@ -372,10 +371,8 @@ class Black_Hole_Shader extends Shader         // Simple "procedural" texture sh
                           // you have the current vertex's stored position and texture coord, animation time,
                           // and the final product of the projection, camera, and model matrices.
       return this.shared_glsl_code() + `
-
         void main()
         { 
-
         }`;
     }
   fragment_glsl_code()           // ********* FRAGMENT SHADER *********
@@ -386,7 +383,6 @@ class Black_Hole_Shader extends Shader         // Simple "procedural" texture sh
       return this.shared_glsl_code() + `
         void main()
         { 
-
         }`;
     }
 }
@@ -411,17 +407,14 @@ class Sun_Shader extends Shader
     }
   vertex_glsl_code()           // ********* VERTEX SHADER *********
     { return this.shared_glsl_code() + `
-
         void main()
         {
-
         }`;
     }
   fragment_glsl_code()           // ********* FRAGMENT SHADER *********
     { return this.shared_glsl_code() + `
         void main() 
         {
-
         } ` ;
     }
 }
