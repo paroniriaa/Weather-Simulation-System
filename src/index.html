@@ -9,16 +9,10 @@
     <link rel="icon" href="src/images/fav.ico">
     <style>
     body{
-        background-color: #bfd1e5;
-        color: #61443e;
         margin: 0;
         height: 100vh;
         width: 100vh;
     }
-    a {  
-        color: #a06851;
-    }
-    
     canvas{
         display:block;
     }
@@ -26,33 +20,26 @@
 </head>
 
 <body>
-    <div id="container">
-        <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-        </div>
-    </div>
+    <div id="container"></div>
+    <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;"></div>
     <script src = "src/three.js"></script>
     <script src = "src/OrbitControls.js"></script>
     <script src = "src/ImprovedNoise.js"></script>
     <script src = "src/WebGL.js"></script>
     <script src = "src/stats.min.js"></script>
     <script src = "src/Sky.js"></script>
+    <script src = "src/Detector.js"></script>
     <script src = "src/Water.js"></script>
     <script src = "src/dat.gui.min.js"></script>
-
-
 
     <script>
 
 var container, stats;
-
-var camera, controls, scene, renderer, light;
-
+var camera, controls, scene, renderer,light;
 var mesh, texture;
-
-var water;
+var water, cloud;
+var flash, rain, rainGeo, rainCount = 15000;
+let cloudParticles_w=[], cloudParticles_b=[];
 
 var worldWidth = window.innerWidth, worldDepth = window.innerHeight,
 worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
@@ -61,14 +48,14 @@ var clock = new THREE.Clock();
 
 container = document.getElementById( 'container' );
 
+//100
 camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 20000 );
 camera.position.set( 30, 30, 100 );
-
 
 scene = new THREE.Scene();
 scene.background = new THREE.Color( 0xbfd1e5 );
 //FOG
-//scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0002);
+scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0002);
 
 light = new THREE.DirectionalLight( 0xffffff, 0.8 );
 scene.add( light );
@@ -111,15 +98,11 @@ controls.handleResize();
 
 }
 
-
-
-
-
 Terraininit();
 Sky_Waterinit();
+Cloud_raininit();
+//Cloud_snowinit();
 animate();
-
-
 
 
 
@@ -143,7 +126,6 @@ for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
 texture = new THREE.CanvasTexture( generateTexture( Terriandata, worldWidth, worldDepth ) );
 texture.wrapS = THREE.ClampToEdgeWrapping;
 texture.wrapT = THREE.ClampToEdgeWrapping;
-
 mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { map: texture } ) );
 scene.add( mesh );
 
@@ -240,6 +222,7 @@ context.putImageData( image, 0, 0 );
 return canvasScaled;
 
 }
+
 function Sky_Waterinit() {
     var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
 
@@ -327,8 +310,89 @@ folder.open();
 }
 
 
-function animate() {
+function Cloud_raininit() {
 
+    let loader = new THREE.TextureLoader();
+     loader.load( "src/images/cloud_black.png", function ( texture ){
+     cloudGeo = new THREE.PlaneBufferGeometry(500, 500);
+     cloudMaterial = new THREE.MeshBasicMaterial({
+         map: texture,
+         transparent: true
+     })
+
+     for(let p = 0; p < 50; p++ ){
+         let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
+         cloud.position.set(
+              Math.random() * 800 - 400,
+              500,
+              Math.random() * 500 - 450
+         );
+         cloud.rotation.x = 1.16;
+         cloud.rotation.y = -0.12;
+         cloud.rotation.z = Math.random() * 360;
+         cloud.material.opacity = 0.8;
+         cloudParticles_b.push(cloud);
+         scene.add(cloud);
+     }
+     });
+
+    
+
+    flash = new THREE.PointLight(0x062d89, 30, 500, 0);
+    flash.position.set(
+              10,
+              125,
+              -50
+         );
+    scene.add(flash);
+
+    rainGeo = new THREE.Geometry();
+    for(let i=0; i<rainCount;i++){
+        rainDrop = new THREE.Vector3(
+            Math.random() * 500 - 450,
+            Math.random() * 500 - 450,
+            Math.random() * 500 - 450
+        );
+        rainDrop.velocity = {};
+        rainDrop.velocity = 0;
+        rainGeo.vertices.push(rainDrop);
+    }
+    rainMaterial = new THREE.PointsMaterial({
+        color: 0xaaaaaa,
+        size: 0.1,
+        transparent: true
+    });
+    rain = new THREE.Points(rainGeo,rainMaterial);
+    scene.add(rain);
+}
+
+
+
+
+function animate() {
+    cloudParticles_b.forEach(p =>{
+     p.rotation.z -=0.002;
+});
+rainGeo.vertices.forEach(p=>{
+    p.velocity-= 0.01 + Math.random() * 1.5;
+    p.y += p.velocity;
+    if (p.y < 0){
+        p.y = 500;
+        p.velocity = 0;
+    }
+});
+rainGeo.verticesNeedUpdate = true;
+// rain.rotation.y += 0.002;
+if(Math.random() > 0.93 || flash.power > 100){
+    if (flash.power < 100)
+    flash.position.set(
+        Math.random() * 400,
+        Math.random() * 200 + 300,
+        100
+    );
+    flash.power = 50 + Math.random() * 500
+
+}
 requestAnimationFrame( animate );
 render();
 stats.update();
@@ -344,9 +408,9 @@ controls.update( clock.getDelta() );
 renderer.render( scene, camera );
 
 water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
-
 }
-    </script>
 
+
+</script>
 </body>
 </html>
