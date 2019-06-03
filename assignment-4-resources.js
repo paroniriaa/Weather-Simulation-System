@@ -233,6 +233,55 @@ class Subdivision_Sphere extends Shape
     }
 }
 
+const Grid_Patch = defs.Grid_Patch =
+class Grid_Patch extends Shape       // A grid of rows and columns you can distort. A tesselation of triangles connects the
+{                                           // points, generated with a certain predictable pattern of indices.  Two callbacks
+                                            // allow you to dynamically define how to reach the next row or column.
+  constructor( rows, columns, next_row_function, next_column_function, texture_coord_range = [ [ 0, rows ], [ 0, columns ] ]  )
+    { super( "position", "normal", "texture_coord" );
+      let points = [];
+      for( let r = 0; r <= rows; r++ ) 
+      { points.push( new Array( columns+1 ) );                                                    // Allocate a 2D array.
+                                             // Use next_row_function to generate the start point of each row. Pass in the progress ratio,
+        points[ r ][ 0 ] = next_row_function( r/rows, points[ r-1 ] && points[ r-1 ][ 0 ] );      // and the previous point if it existed.                                                                                                  
+      }
+      for(   let r = 0; r <= rows;    r++ )               // From those, use next_column function to generate the remaining points:
+        for( let c = 0; c <= columns; c++ )
+        { if( c > 0 ) points[r][ c ] = next_column_function( c/columns, points[r][ c-1 ], r/rows );
+      
+          this.arrays.position.push( points[r][ c ] );        
+                                                                                      // Interpolate texture coords from a provided range.
+          const a1 = c/columns, a2 = r/rows, x_range = texture_coord_range[0], y_range = texture_coord_range[1];
+          this.arrays.texture_coord.push( Vec.of( ( a1 )*x_range[1] + ( 1-a1 )*x_range[0], ( a2 )*y_range[1] + ( 1-a2 )*y_range[0] ) );
+        }
+      for(   let r = 0; r <= rows;    r++ )            // Generate normals by averaging the cross products of all defined neighbor pairs.
+        for( let c = 0; c <= columns; c++ )
+        { let curr = points[r][c], neighbors = new Array(4), normal = Vec.of( 0,0,0 );          
+          for( let [ i, dir ] of [ [ -1,0 ], [ 0,1 ], [ 1,0 ], [ 0,-1 ] ].entries() )         // Store each neighbor by rotational order.
+            neighbors[i] = points[ r + dir[1] ] && points[ r + dir[1] ][ c + dir[0] ];        // Leave "undefined" in the array wherever
+                                                                                              // we hit a boundary.
+          for( let i = 0; i < 4; i++ )                                          // Take cross-products of pairs of neighbors, proceeding
+            if( neighbors[i] && neighbors[ (i+1)%4 ] )                          // a consistent rotational direction through the pairs:
+              normal = normal.plus( neighbors[i].minus( curr ).cross( neighbors[ (i+1)%4 ].minus( curr ) ) );          
+          normal.normalize();                                                              // Normalize the sum to get the average vector.
+                                                     // Store the normal if it's valid (not NaN or zero length), otherwise use a default:
+          if( normal.every( x => x == x ) && normal.norm() > .01 )  this.arrays.normal.push( Vec.from( normal ) );    
+          else                                                      this.arrays.normal.push( Vec.of( 0,0,1 )    );
+        }   
+        
+      for( var h = 0; h < rows; h++ )             // Generate a sequence like this (if #columns is 10):  
+        for( var i = 0; i < 2 * columns; i++ )    // "1 11 0  11 1 12  2 12 1  12 2 13  3 13 2  13 3 14  4 14 3..." 
+          for( var j = 0; j < 3; j++ )
+            this.indices.push( h * ( columns + 1 ) + columns * ( ( i + ( j % 2 ) ) % 2 ) + ( ~~( ( j % 3 ) / 2 ) ? 
+                                   ( ~~( i / 2 ) + 2 * ( i % 2 ) )  :  ( ~~( i / 2 ) + 1 ) ) );
+    }
+  static sample_array( array, ratio )                 // Optional but sometimes useful as a next row or column operation. In a given array
+    {                                                 // of points, intepolate the pair of points that our progress ratio falls between.  
+      const frac = ratio * ( array.length - 1 ), alpha = frac - Math.floor( frac );
+      return array[ Math.floor( frac ) ].mix( array[ Math.ceil( frac ) ], alpha );
+    }
+}
+
 
 const Minimal_Shape = defs.Minimal_Shape =
 class Minimal_Shape extends tiny.Vertex_Buffer
