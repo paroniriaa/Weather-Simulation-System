@@ -23,12 +23,12 @@
     <div id="container"></div>
     <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;"></div>
     <script src = "src/three.js"></script>
+    <script src = "src/threex.terrain.js"></script>
     <script src = "src/OrbitControls.js"></script>
     <script src = "src/ImprovedNoise.js"></script>
     <script src = "src/WebGL.js"></script>
     <script src = "src/stats.min.js"></script>
     <script src = "src/Sky.js"></script>
-    <script src = "src/Detector.js"></script>
     <script src = "src/Water.js"></script>
     <script src = "src/dat.gui.min.js"></script>
 
@@ -39,7 +39,7 @@ var camera, controls, scene, renderer,light;
 var mesh, texture;
 var water, cloud;
 var flash, rain, rainGeo, rainCount = 15000;
-let cloudParticles_w=[], cloudParticles_b=[];
+var cloudparticles_w=[], cloudparticles_b=[];
 
 var worldWidth = window.innerWidth, worldDepth = window.innerHeight,
 worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
@@ -48,14 +48,19 @@ var clock = new THREE.Clock();
 
 container = document.getElementById( 'container' );
 
-//100
-camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 20000 );
-camera.position.set( 30, 30, 100 );
-
 scene = new THREE.Scene();
 scene.background = new THREE.Color( 0xbfd1e5 );
 //FOG
 scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0002);
+
+//100
+camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 20000 );
+camera.position.set(30,30,100);
+// var skyboxgeometry = new THREE.CubeGeometry(15000, 15000, 15000);
+// var skyboxMaterials =  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load( 'src/images/nx.jpg'), side: THREE.DoubleSide });
+// var skyboxMaterials = new THREE.MeshFaceMaterial(skyboxMaterials);
+// var skybox = new THREE.Mesh(skyboxgeometry, skyboxMaterials);
+// scene.add(skybox); 
 
 light = new THREE.DirectionalLight( 0xffffff, 0.8 );
 scene.add( light );
@@ -72,20 +77,100 @@ controls.minDistance = 40.0;
 controls.maxDistance = 200.0;
 controls.update();
 
+var gui = new dat.GUI();
+gui.remember(GuiControl);
+
+ var GuiControl = new function(){
+
+    this.blackcloudrange = 1;
+    this.cloudsize_b = 2;
+    this.cloudopacity_b = 0.6;
+    this.cloudcolor_b = 0xffffff;
+    this.cloudtransparent_b = true;
+
+    this.whitecloudrange = 1;
+    this.cloudsize_w = 2;
+    this.cloudopacity_w = 0.6;
+    this.cloudcolor_w = 0xffffff;
+    this.cloudtransparent_w = true;
+
+    this.rainrange = 1500;
+    this.rainsize = 2;
+    this.rainopacity = 0.6;
+    this.raincolor = 0xffffff;
+    this.raintransparent = true;
+    this.rainvertexcolors = true;
+    this.rainsizeattenuation = true;
+
+    this.snowrange = 1500;
+    this.snowsize = 2;
+    this.snowopacity = 0.6;
+    this.snowcolor = 0xffffff;
+    this.snowtransparent = true;
+    this.snowvertexcolors = true;
+    this.snowsizeattenuation = true;
+    
+    this.waterfog = true;
+    this.windpower_x = 0;
+    this.windpower_z = 0;
+    this.rotatesystem = false;
+
+    // this.DrawTerrian = true,
+    // this.DrawSun = true,
+    // this.DrawWater = true,
+    // this.DrawCloud = true,
+    // this.DrawRain = true
+ };
+
+ 
+     var folder = gui.addFolder( 'Evnet' );
+     folder.add(GuiControl, 'rotatesystem').onChange(redraw).name('Autoroate');
+     folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw).name('Wind-X');
+     folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw).name('Wind-Z');
+
+     var folder = gui.addFolder( 'BlackCloud' );
+     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_b').onChange(redraw).name('Transparent');
+     folder.open();
+
+     var folder = gui.addFolder( 'WhiteCloud' );
+     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_w').onChange(redraw).name('Transparent');
+     folder.open();
+
+     var folder = gui.addFolder( 'Rain' );
+     folder.add(GuiControl, 'rainrange',100,10000).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'rainsize',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'rainopacity', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'raincolor').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'raintransparent').onChange(redraw).name('Transparent');
+     folder.add(GuiControl, 'rainvertexcolors').onChange(redraw).name('Texcolor');
+     folder.add(GuiControl, 'rainsizeattenuation').onChange(redraw).name('Attenuation');
+     folder.open();
+     
+     var folder = gui.addFolder( 'Snow' );
+     folder.add(GuiControl, 'snowrange',100,10000).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'snowsize',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'snowopacity', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'snowcolor').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'snowtransparent').onChange(redraw).name('Transparent');
+     folder.add(GuiControl, 'snowvertexcolors').onChange(redraw).name('Texcolor');
+     folder.add(GuiControl, 'snowsizeattenuation').onChange(redraw).name('Attenuation');
+     folder.open();
+
 
 stats = new Stats();
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.left = '0px';
 container.appendChild( stats.dom );
 
 window.addEventListener( 'resize', onWindowResize, false );
-
-document.addEventListener('touchstart', function(event){
-    if (event.cancelable){
-        if (!event.defultPrevented){
-            event.preventDefault();
-        }
-    }
-
-},false);
 
 function onWindowResize() {
 
@@ -98,10 +183,149 @@ controls.handleResize();
 
 }
 
+function redraw() {
+
+    if (cloud_b){
+        cloudparticles_b = [];
+        // scene.remove(cloud_b);
+        scene.children.cloud_b={};
+        Blackcloudinit(GuiControl.blackcloudrange);
+    }
+
+    if (cloud_w){
+        cloudparticles_w = [];
+        // scene.remove(cloud_w);
+        scene.children.cloud_w={};
+        Whitecloudinit(GuiControl.whitecloudrange);
+    }
+
+    if (snow){
+        scene.remove(snow);
+        Snowinit(GuiControl.snowrange);
+    }
+    if (rain){
+        scene.remove(rain);
+        Raininit(GuiControl.rainrange);
+    }
+
+    controls.autoRotate = GuiControl.rotatesystem;
+}
+
+function render() {
+
+var time = performance.now() * 0.001;
+water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+
+ cloudparticles_b.forEach(function(p){
+ if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
+ if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+  p.lookAt(camera.position);
+ });
+
+ cloudparticles_w.forEach(function(p){
+ if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
+ if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+  p.lookAt(camera.position);
+ });
+
+var snowvertices = snow.geometry.vertices;
+snowvertices.forEach(function (v) {
+    if(GuiControl.windpower_x > 0){
+        v.x += (GuiControl.windpower_x + Math.random() * 10);
+
+        if (v.x >= 500) {
+            v.x = -500 - (v.velocityX) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+    };
+    
+    if(GuiControl.windpower_z > 0){
+        v.z += GuiControl.windpower_z;
+
+        if (v.z >= 500) {
+            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+     };
+
+     if(GuiControl.windpower_x == 0 && GuiControl.windpower_z == 0){
+        
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5; 
+     }
+
+    if (v.y <= -100) {v.y = 500;}
+    if (v.x <= -500 || v.x >= 500) {  v.velocityX = v.velocityX * -1;}
+    if (v.z <= -500 || v.z >= 500) {  v.velocityZ = v.velocityZ * -1;}
+        });
+
+snow.geometry.verticesNeedUpdate = true;
+
+
+var rainvertices = rain.geometry.vertices;
+rainvertices.forEach(function (v) {
+    if(GuiControl.windpower_x > 0){
+        v.x += (GuiControl.windpower_x + Math.random() * 10);
+
+        if (v.x >= 500) {
+            v.x = -500 - (v.velocityX) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+    };
+    
+    if(GuiControl.windpower_z > 0){
+        v.z += GuiControl.windpower_z;
+
+        if (v.z >= 500) {
+            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+     };
+     
+     if(GuiControl.windpower_x == 0 && GuiControl.windpower_z == 0){
+        
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5; 
+     }
+
+    if (v.y <= -100) {v.y = 500;}
+    if (v.x <= -500 || v.x >= 500) {  v.velocityX = v.velocityX * -1;}
+    if (v.z <= -500 || v.z >= 500) {  v.velocityZ = v.velocityZ * -1;}
+        });
+
+rain.geometry.verticesNeedUpdate = true;
+
+}
+
+function animate() {
+
+requestAnimationFrame( animate );
+render();
+stats.update();
+controls.update( clock.getDelta() );
+renderer.render( scene, camera );
+}
+
 Terraininit();
 Sky_Waterinit();
-Cloud_raininit();
-//Cloud_snowinit();
+Blackcloudinit(GuiControl.blackcloudrange);
+Whitecloudinit(GuiControl.whitecloudrange);
+Raininit(GuiControl.rainrange);
+Snowinit(GuiControl.snowrange);
 animate();
 
 
@@ -126,11 +350,12 @@ for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
 texture = new THREE.CanvasTexture( generateTexture( Terriandata, worldWidth, worldDepth ) );
 texture.wrapS = THREE.ClampToEdgeWrapping;
 texture.wrapT = THREE.ClampToEdgeWrapping;
+
+// Try to implement the mix-mapping with different height for terrian but run out of time :CCC
+
 mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { map: texture } ) );
 scene.add( mesh );
-
 }
-
 
 
 function generateHeight( width, height ) {
@@ -150,11 +375,8 @@ for ( var j = 0; j < 4; j ++ ) {
     quality *= 5;
 
 }
-
 return Terriandata;
-
 }
-
 
 
 function generateTexture( Terriandata, width, height ) {
@@ -220,8 +442,8 @@ for ( var i = 0, l = imageData.length; i < l; i += 4 ) {
 context.putImageData( image, 0, 0 );
 
 return canvasScaled;
-
 }
+
 
 function Sky_Waterinit() {
     var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
@@ -237,11 +459,12 @@ water = new THREE.Water(
 
         } ),
         alpha: 1.0,
+        time:0.0,
         sunDirection: light.position.clone().normalize(),
-        sunColor: 0xffffff,
-        waterColor: 0x001e0f,
-        distortionScale: 3.7,
-        fog: scene.fog !== undefined
+        sunColor: 0x020202,
+        waterColor: 0x000000,
+        distortionScale: 5,
+        fog: GuiControl.waterfog
     }
 );
 
@@ -292,123 +515,188 @@ function updateSun() {
 updateSun();
 
 // GUI
-
 var gui = new dat.GUI();
 
 var folder = gui.addFolder( 'Sky' );
-folder.add( parameters, 'inclination', 0, 0.5, 0.0001 ).onChange( updateSun );
-folder.add( parameters, 'azimuth', 0, 1, 0.0001 ).onChange( updateSun );
+folder.add( parameters, 'inclination', 0, 0.5, 0.0001 ).onChange( updateSun ).name( 'Inclination' );
+folder.add( parameters, 'azimuth', 0, 1, 0.0001 ).onChange( updateSun ).name( 'Azimuth' );
+//folder.add( parameters, 'distance', 300, 500, 1 ).onChange( updateSun );
+//folder.add( GuiControl, 'DrawSun').name('Sun');
 folder.open();
 
 var uniforms = water.material.uniforms;
 
 var folder = gui.addFolder( 'Water' );
-folder.add( uniforms.distortionScale, 'value', 0, 8, 0.1 ).name( 'distortionScale' );
-folder.add( uniforms.size, 'value', 0.1, 10, 0.1 ).name( 'size' );
+folder.add( uniforms.distortionScale, 'value', 0, 50, 1 ).name( 'Scale' );
+folder.add( uniforms.alpha, 'value', 1, 10, 0.1 ).name( 'Size' );
+folder.add( uniforms.time, 'value', 1, 1000, 1 ).name( 'Time' );
+//folder.add( GuiControl, 'waterfog').name( 'Fog' );
+folder.addColor(uniforms.sunColor, 'value').name('Suncolor');
+folder.addColor(uniforms.waterColor, 'value').name('WaterColor');
+//folder.add( GuiControl, 'DrawWater').name('Water');
 folder.open();
 
 }
 
 
-function Cloud_raininit() {
+var cloud_b;
 
-    let loader = new THREE.TextureLoader();
-     loader.load( "src/images/cloud_black.png", function ( texture ){
-     cloudGeo = new THREE.PlaneBufferGeometry(500, 500);
-     cloudMaterial = new THREE.MeshBasicMaterial({
-         map: texture,
-         transparent: true
-     })
+function Blackcloudinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/cloud_black.png");
+        var geom = new THREE.PlaneGeometry(700,700);
+        var material = new THREE.MeshBasicMaterial({
+            transparent: GuiControl.cloudtransparent_b,
+            opacity: GuiControl.cloudopacity_b,
+            color: GuiControl.cloudcolor_b,
+            map:texture,
+            depthTest: false
+        });
 
-     for(let p = 0; p < 50; p++ ){
-         let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
-         cloud.position.set(
-              Math.random() * 800 - 400,
-              500,
-              Math.random() * 500 - 450
-         );
-         cloud.rotation.x = 1.16;
-         cloud.rotation.y = -0.12;
-         cloud.rotation.z = Math.random() * 360;
-         cloud.material.opacity = 0.8;
-         cloudParticles_b.push(cloud);
-         scene.add(cloud);
-     }
-     });
+        for (var i = 0; i < 100; i++) {
+            cloud_b = new THREE.Mesh(geom, material);
+            cloud_b.position.set(
+                (Math.random() * 1000 ) * range, 
+                500, 
+                (Math.random() * -1000 ) * range
+                );
 
-    
+            cloud_b.rotation.x * Math.random() * range;
+            cloud_b.rotation.y * Math.random() * range;
+            cloud_b.rotation.z * Math.random() * range;
 
-    flash = new THREE.PointLight(0x062d89, 30, 500, 0);
-    flash.position.set(
-              10,
-              125,
-              -50
-         );
-    scene.add(flash);
+            cloudparticles_b.push(cloud_b);
+            scene.add(cloud_b);
+        }
+}
 
-    rainGeo = new THREE.Geometry();
-    for(let i=0; i<rainCount;i++){
-        rainDrop = new THREE.Vector3(
-            Math.random() * 500 - 450,
-            Math.random() * 500 - 450,
-            Math.random() * 500 - 450
-        );
-        rainDrop.velocity = {};
-        rainDrop.velocity = 0;
-        rainGeo.vertices.push(rainDrop);
+
+var cloud_w;
+
+function Whitecloudinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/cloud_white.png");
+        var geom = new THREE.PlaneGeometry(500,500);
+        var material = new THREE.MeshBasicMaterial({
+            transparent: GuiControl.cloudtransparent_w,
+            opacity: GuiControl.cloudopacity_w,
+            color: GuiControl.cloudcolor_w,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 100; i++) {
+            cloud_w = new THREE.Mesh(geom, material);
+            cloud_w.position.set(
+                (Math.random() * -1000) * range, 
+                500, 
+                (Math.random() * 1000) * range
+                );
+
+            cloud_w.rotation.x * Math.random() * range;
+            cloud_b.rotation.y * Math.random() * range;
+            cloud_b.rotation.z * Math.random() * range;
+
+            cloudparticles_w.push(cloud_w);
+            scene.add(cloud_w);
+        }
+}
+
+// Old version with no gui interactive attribute :s
+////////////////////////////////////////////////////
+// function Whitecloudinit(){
+         
+//     let loader_wc = new THREE.TextureLoader();
+//      loader_wc.load( "src/images/cloud_white.png", function ( texture ){
+//      cloudGeo_w = new THREE.PlaneBufferGeometry(500, 500);
+//      cloudMaterial_w = new THREE.MeshBasicMaterial({
+//          map: texture,
+//          transparent: true
+//      })
+
+//      for(let p = 0; p < 100; p++ ){
+//          cloud_w = new THREE.Mesh(cloudGeo_w, cloudMaterial_w);
+//          cloud_w.position.set(
+//               Math.random() * 800 - 1500,
+//               500,
+//               Math.random() * 500 - 1450
+//          );
+//          cloud_w.material.opacity = 0.8;
+//          cloudparticles_w.push(cloud_w);
+//          scene.add(cloud_w);
+//      }
+//     });
+// }
+////////////////////////////////////////////////////
+
+var rain;
+function Raininit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/rain.png");
+        var geom = new THREE.Geometry(500,500);
+        var material = new THREE.PointsMaterial({
+            size: GuiControl.rainsize,
+            transparent: GuiControl.raintransparent,
+            opacity: GuiControl.rainopacity,
+            vertexColors: GuiControl.rainvertexcolors,
+            sizeAttenuation: GuiControl.rainsizeattenuation,
+            color: GuiControl.raincolor,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 15000; i++) {
+            var particle = new THREE.Vector3(
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2
+                );
+            particle.velocityY = 0.1 + Math.random() / 5;
+            particle.velocityX = (Math.random() - 0.5) / 3;
+            particle.velocityZ = (Math.random() - 0.5) / 3;
+            geom.vertices.push(particle);
+            var color = new THREE.Color(0xffffff);
+            geom.colors.push(color);
+        }
+
+        rain = new THREE.Points(geom, material);
+        rain.verticesNeedUpdate = true;
+
+        scene.add(rain);
     }
-    rainMaterial = new THREE.PointsMaterial({
-        color: 0xaaaaaa,
-        size: 0.1,
-        transparent: true
-    });
-    rain = new THREE.Points(rainGeo,rainMaterial);
-    scene.add(rain);
-}
 
 
+var snow;
+function Snowinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/snowflake7_alpha.png");
+        var geom = new THREE.Geometry(500,500);
+        var material = new THREE.PointsMaterial({
+            size: GuiControl.snowsize,
+            transparent: GuiControl.snowtransparent,
+            opacity: GuiControl.snowopacity,
+            vertexColors: GuiControl.snowvertexcolors,
+            sizeAttenuation: GuiControl.snowsizeattenuation,
+            color: GuiControl.snowcolor,
+            map:texture,
+            depthTest: false
+        });
 
+        for (var i = 0; i < 15000; i++) {
+            var particle = new THREE.Vector3(
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2
+                );
+            particle.velocityY = 0.1 + Math.random() / 5;
+            particle.velocityX = (Math.random() - 0.5) / 3;
+            particle.velocityZ = (Math.random() - 0.5) / 3;
+            geom.vertices.push(particle);
+            var color = new THREE.Color(0xffffff);
+            geom.colors.push(color);
+        }
 
-function animate() {
-    cloudParticles_b.forEach(p =>{
-     p.rotation.z -=0.002;
-});
-rainGeo.vertices.forEach(p=>{
-    p.velocity-= 0.01 + Math.random() * 1.5;
-    p.y += p.velocity;
-    if (p.y < 0){
-        p.y = 500;
-        p.velocity = 0;
+        snow = new THREE.Points(geom, material);
+        snow.verticesNeedUpdate = true;
+
+        scene.add(snow);
     }
-});
-rainGeo.verticesNeedUpdate = true;
-// rain.rotation.y += 0.002;
-if(Math.random() > 0.93 || flash.power > 100){
-    if (flash.power < 100)
-    flash.position.set(
-        Math.random() * 400,
-        Math.random() * 200 + 300,
-        100
-    );
-    flash.power = 50 + Math.random() * 500
-
-}
-requestAnimationFrame( animate );
-render();
-stats.update();
-
-}
-
-
-
-function render() {
-var time = performance.now() * 0.001;
-
-controls.update( clock.getDelta() );
-renderer.render( scene, camera );
-
-water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
-}
 
 
 </script>
