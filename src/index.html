@@ -125,23 +125,10 @@ gui.remember(GuiControl);
  
      var folder = gui.addFolder( 'Evnet' );
      folder.add(GuiControl, 'rotatesystem').onChange(redraw).name('Autoroate');
+    
+     var folder = gui.addFolder( 'Wind' );
      folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw).name('Wind-X');
      folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw).name('Wind-Z');
-
-     var folder = gui.addFolder( 'BlackCloud' );
-     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'cloudtransparent_b').onChange(redraw).name('Transparent');
-     folder.open();
-
-     var folder = gui.addFolder( 'WhiteCloud' );
-     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'cloudtransparent_w').onChange(redraw).name('Transparent');
      folder.open();
 
      var folder = gui.addFolder( 'Rain' );
@@ -162,6 +149,22 @@ gui.remember(GuiControl);
      folder.add(GuiControl, 'snowtransparent').onChange(redraw).name('Transparent');
      folder.add(GuiControl, 'snowvertexcolors').onChange(redraw).name('Texcolor');
      folder.add(GuiControl, 'snowsizeattenuation').onChange(redraw).name('Attenuation');
+     folder.open();
+
+     var folder = gui.addFolder( 'BlackCloud' );
+     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_b').onChange(redraw).name('Transparent');
+     folder.open();
+
+     var folder = gui.addFolder( 'WhiteCloud' );
+     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_w').onChange(redraw).name('Transparent');
      folder.open();
 
 
