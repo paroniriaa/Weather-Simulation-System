@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Final_Project</title>
+    <link rel="icon" href="src/images/fav.ico">
+    <style>
+    body{
+        margin: 0;
+        height: 100vh;
+        width: 100vh;
+    }
+    canvas{
+        display:block;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;"></div>
+    <script src = "src/three.js"></script>
+    <script src = "src/threex.terrain.js"></script>
+    <script src = "src/OrbitControls.js"></script>
+    <script src = "src/ImprovedNoise.js"></script>
+    <script src = "src/WebGL.js"></script>
+    <script src = "src/stats.min.js"></script>
+    <script src = "src/Sky.js"></script>
+    <script src = "src/Water.js"></script>
+    <script src = "src/dat.gui.min.js"></script>
+
+    <script>
+
+var container, stats;
+var camera, controls, scene, renderer,light;
+var mesh, texture;
+var water, cloud;
+var flash, rain, rainGeo, rainCount = 15000;
+var cloudparticles_w=[], cloudparticles_b=[];
+
+var worldWidth = window.innerWidth, worldDepth = window.innerHeight,
+worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
+
+var clock = new THREE.Clock();
+
+container = document.getElementById( 'container' );
+
+scene = new THREE.Scene();
+scene.background = new THREE.Color( 0xbfd1e5 );
+//FOG
+scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0002);
+
+//100
+camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 20000 );
+camera.position.set(30,30,100);
+// var skyboxgeometry = new THREE.CubeGeometry(15000, 15000, 15000);
+// var skyboxMaterials =  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load( 'src/images/nx.jpg'), side: THREE.DoubleSide });
+// var skyboxMaterials = new THREE.MeshFaceMaterial(skyboxMaterials);
+// var skybox = new THREE.Mesh(skyboxgeometry, skyboxMaterials);
+// scene.add(skybox); 
+
+light = new THREE.DirectionalLight( 0xffffff, 0.8 );
+scene.add( light );
+
+renderer = new THREE.WebGLRenderer();
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+container.appendChild( renderer.domElement );
+
+controls = new THREE.OrbitControls( camera, renderer.domElement );
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.target.set( 0, 10, 0 );
+controls.minDistance = 40.0;
+controls.maxDistance = 200.0;
+controls.update();
+
+var gui = new dat.GUI();
+gui.remember(GuiControl);
+
+ var GuiControl = new function(){
+
+    this.blackcloudrange = 1;
+    this.cloudsize_b = 2;
+    this.cloudopacity_b = 0.6;
+    this.cloudcolor_b = 0xffffff;
+    this.cloudtransparent_b = true;
+
+    this.whitecloudrange = 1;
+    this.cloudsize_w = 2;
+    this.cloudopacity_w = 0.6;
+    this.cloudcolor_w = 0xffffff;
+    this.cloudtransparent_w = true;
+
+    this.rainrange = 1500;
+    this.rainsize = 2;
+    this.rainopacity = 0.6;
+    this.raincolor = 0xffffff;
+    this.raintransparent = true;
+    this.rainvertexcolors = true;
+    this.rainsizeattenuation = true;
+
+    this.snowrange = 1500;
+    this.snowsize = 2;
+    this.snowopacity = 0.6;
+    this.snowcolor = 0xffffff;
+    this.snowtransparent = true;
+    this.snowvertexcolors = true;
+    this.snowsizeattenuation = true;
+    
+    this.waterfog = true;
+    this.windpower_x = 0;
+    this.windpower_z = 0;
+    this.rotatesystem = false;
+
+    // this.DrawTerrian = true,
+    // this.DrawSun = true,
+    // this.DrawWater = true,
+    // this.DrawCloud = true,
+    // this.DrawRain = true
+ };
+
+ 
+     var folder = gui.addFolder( 'Evnet' );
+     folder.add(GuiControl, 'rotatesystem').onChange(redraw).name('Autoroate');
+    
+     var folder = gui.addFolder( 'Wind' );
+     folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw).name('Wind-X');
+     folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw).name('Wind-Z');
+     folder.open();
+
+     var folder = gui.addFolder( 'Rain' );
+     folder.add(GuiControl, 'rainrange',100,10000).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'rainsize',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'rainopacity', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'raincolor').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'raintransparent').onChange(redraw).name('Transparent');
+     folder.add(GuiControl, 'rainvertexcolors').onChange(redraw).name('Texcolor');
+     folder.add(GuiControl, 'rainsizeattenuation').onChange(redraw).name('Attenuation');
+     folder.open();
+     
+     var folder = gui.addFolder( 'Snow' );
+     folder.add(GuiControl, 'snowrange',100,10000).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'snowsize',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'snowopacity', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'snowcolor').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'snowtransparent').onChange(redraw).name('Transparent');
+     folder.add(GuiControl, 'snowvertexcolors').onChange(redraw).name('Texcolor');
+     folder.add(GuiControl, 'snowsizeattenuation').onChange(redraw).name('Attenuation');
+     folder.open();
+
+     var folder = gui.addFolder( 'BlackCloud' );
+     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_b').onChange(redraw).name('Transparent');
+     folder.open();
+
+     var folder = gui.addFolder( 'WhiteCloud' );
+     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redraw).name('Range');
+     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redraw).name('Size');
+     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redraw).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redraw).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_w').onChange(redraw).name('Transparent');
+     folder.open();
+
+
+stats = new Stats();
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.left = '0px';
+container.appendChild( stats.dom );
+
+window.addEventListener( 'resize', onWindowResize, false );
+
+function onWindowResize() {
+
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+
+renderer.setSize( window.innerWidth, window.innerHeight );
+
+controls.handleResize();
+
+}
+
+function redraw() {
+
+    if (cloud_b){
+        cloudparticles_b = [];
+        // scene.remove(cloud_b);
+        scene.children.cloud_b={};
+        Blackcloudinit(GuiControl.blackcloudrange);
+    }
+
+    if (cloud_w){
+        cloudparticles_w = [];
+        // scene.remove(cloud_w);
+        scene.children.cloud_w={};
+        Whitecloudinit(GuiControl.whitecloudrange);
+    }
+
+    if (snow){
+        scene.remove(snow);
+        Snowinit(GuiControl.snowrange);
+    }
+    if (rain){
+        scene.remove(rain);
+        Raininit(GuiControl.rainrange);
+    }
+
+    controls.autoRotate = GuiControl.rotatesystem;
+}
+
+function render() {
+
+var time = performance.now() * 0.001;
+water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+
+ cloudparticles_b.forEach(function(p){
+ if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
+ if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+  p.lookAt(camera.position);
+ });
+
+ cloudparticles_w.forEach(function(p){
+ if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
+ if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+  p.lookAt(camera.position);
+ });
+
+var snowvertices = snow.geometry.vertices;
+snowvertices.forEach(function (v) {
+    if(GuiControl.windpower_x > 0){
+        v.x += (GuiControl.windpower_x + Math.random() * 10);
+
+        if (v.x >= 500) {
+            v.x = -500 - (v.velocityX) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+    };
+    
+    if(GuiControl.windpower_z > 0){
+        v.z += GuiControl.windpower_z;
+
+        if (v.z >= 500) {
+            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+     };
+
+     if(GuiControl.windpower_x == 0 && GuiControl.windpower_z == 0){
+        
+        v.y = v.y - (v.velocityY)* 1.5;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5; 
+     }
+
+    if (v.y <= -100) {v.y = 500;}
+    if (v.x <= -500 || v.x >= 500) {  v.velocityX = v.velocityX * -1;}
+    if (v.z <= -500 || v.z >= 500) {  v.velocityZ = v.velocityZ * -1;}
+        });
+
+snow.geometry.verticesNeedUpdate = true;
+
+
+var rainvertices = rain.geometry.vertices;
+rainvertices.forEach(function (v) {
+    if(GuiControl.windpower_x > 0){
+        v.x += (GuiControl.windpower_x + Math.random() * 10);
+
+        if (v.x >= 500) {
+            v.x = -500 - (v.velocityX) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+    };
+    
+    if(GuiControl.windpower_z > 0){
+        v.z += GuiControl.windpower_z;
+
+        if (v.z >= 500) {
+            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+        }
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5;
+
+     };
+     
+     if(GuiControl.windpower_x == 0 && GuiControl.windpower_z == 0){
+        
+        v.y = v.y - (v.velocityY)* 30;
+        v.x = v.x - (v.velocityX)*.5;
+        v.z = v.z - (v.velocityZ)*.5; 
+     }
+
+    if (v.y <= -100) {v.y = 500;}
+    if (v.x <= -500 || v.x >= 500) {  v.velocityX = v.velocityX * -1;}
+    if (v.z <= -500 || v.z >= 500) {  v.velocityZ = v.velocityZ * -1;}
+        });
+
+rain.geometry.verticesNeedUpdate = true;
+
+}
+
+function animate() {
+
+requestAnimationFrame( animate );
+render();
+stats.update();
+controls.update( clock.getDelta() );
+renderer.render( scene, camera );
+}
+
+Terraininit();
+Sky_Waterinit();
+Blackcloudinit(GuiControl.blackcloudrange);
+Whitecloudinit(GuiControl.whitecloudrange);
+Raininit(GuiControl.rainrange);
+Snowinit(GuiControl.snowrange);
+animate();
+
+
+
+function Terraininit() {
+
+var Terriandata = generateHeight( worldWidth, worldDepth );
+
+camera.position.y = Terriandata[ worldHalfWidth + worldHalfDepth * worldWidth ] * 10 + 500;
+
+var geometry = new THREE.PlaneBufferGeometry( 12500, 12500, worldWidth - 1, worldDepth - 1 );
+geometry.rotateX( - Math.PI / 2 );
+
+var vertices = geometry.attributes.position.array;
+
+for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
+
+    vertices[ j + 1 ] = Terriandata[ i ] * 10 - 750;
+
+}
+
+texture = new THREE.CanvasTexture( generateTexture( Terriandata, worldWidth, worldDepth ) );
+texture.wrapS = THREE.ClampToEdgeWrapping;
+texture.wrapT = THREE.ClampToEdgeWrapping;
+
+// Try to implement the mix-mapping with different height for terrian but run out of time :CCC
+
+mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { map: texture } ) );
+scene.add( mesh );
+}
+
+
+function generateHeight( width, height ) {
+
+var size = width * height, Terriandata = new Uint8Array( size ),
+    perlin = new THREE.ImprovedNoise(), quality = 1, z = Math.random() * 100;
+
+for ( var j = 0; j < 4; j ++ ) {
+
+    for ( var i = 0; i < size; i ++ ) {
+
+        var x = i % width, y = ~ ~ ( i / width );
+        Terriandata[ i ] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality * 1.75 );
+
+    }
+
+    quality *= 5;
+
+}
+return Terriandata;
+}
+
+
+function generateTexture( Terriandata, width, height ) {
+
+var canvas, canvasScaled, context, image, imageData, vector3, sun, shade;
+
+vector3 = new THREE.Vector3( 0, 0, 0 );
+
+sun = new THREE.Vector3( 1, 1, 1 );
+sun.normalize();
+
+canvas = document.createElement( 'canvas' );
+canvas.width = width;
+canvas.height = height;
+
+context = canvas.getContext( '2d' );
+context.fillStyle = '#000';
+context.fillRect( 0, 0, width, height );
+
+image = context.getImageData( 0, 0, canvas.width, canvas.height );
+imageData = image.data;
+
+for ( var i = 0, j = 0, l = imageData.length; i < l; i += 4, j ++ ) {
+
+    vector3.x = Terriandata[ j - 2 ] - Terriandata[ j + 2 ];
+    vector3.y = 2;
+    vector3.z = Terriandata[ j - width * 2 ] - Terriandata[ j + width * 2 ];
+    vector3.normalize();
+
+    shade = vector3.dot( sun );
+
+    imageData[ i ] = ( 96 + shade * 128 ) * ( 0.5 + Terriandata[ j ] * 0.007 );
+    imageData[ i + 1 ] = ( 32 + shade * 96 ) * ( 0.5 + Terriandata[ j ] * 0.007 );
+    imageData[ i + 2 ] = ( shade * 96 ) * ( 0.5 + Terriandata[ j ] * 0.007 );
+
+}
+
+context.putImageData( image, 0, 0 );
+
+// Scaled 4x
+
+canvasScaled = document.createElement( 'canvas' );
+canvasScaled.width = width * 4;
+canvasScaled.height = height * 4;
+
+context = canvasScaled.getContext( '2d' );
+context.scale( 4, 4 );
+context.drawImage( canvas, 0, 0 );
+
+image = context.getImageData( 0, 0, canvasScaled.width, canvasScaled.height );
+imageData = image.data;
+
+for ( var i = 0, l = imageData.length; i < l; i += 4 ) {
+
+    var v = ~ ~ ( Math.random() * 5 );
+
+    imageData[ i ] += v;
+    imageData[ i + 1 ] += v;
+    imageData[ i + 2 ] += v;
+
+}
+
+context.putImageData( image, 0, 0 );
+
+return canvasScaled;
+}
+
+
+function Sky_Waterinit() {
+    var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
+
+water = new THREE.Water(
+    waterGeometry,
+    {
+        textureWidth: 512,
+        textureHeight: 512,
+        waterNormals: new THREE.TextureLoader().load( 'src/images/Water_2_M_Normal.jpg', function ( texture ) {
+
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+        } ),
+        alpha: 1.0,
+        time:0.0,
+        sunDirection: light.position.clone().normalize(),
+        sunColor: 0x020202,
+        waterColor: 0x000000,
+        distortionScale: 5,
+        fog: GuiControl.waterfog
+    }
+);
+
+water.rotation.x = - Math.PI / 2;
+
+scene.add( water );
+
+// Skybox
+
+var sky = new THREE.Sky();
+
+var uniforms = sky.material.uniforms;
+
+uniforms[ 'turbidity' ].value = 10;
+uniforms[ 'rayleigh' ].value = 2;
+uniforms[ 'luminance' ].value = 1;
+uniforms[ 'mieCoefficient' ].value = 0.005;
+uniforms[ 'mieDirectionalG' ].value = 0.8;
+
+var parameters = {
+    distance: 400,
+    inclination: 0.49,
+    azimuth: 0.205
+};
+
+var cubeCamera = new THREE.CubeCamera( 0.1, 1, 512 );
+cubeCamera.renderTarget.texture.generateMipmaps = true;
+cubeCamera.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+scene.background = cubeCamera.renderTarget;
+
+function updateSun() {
+
+    var theta = Math.PI * ( parameters.inclination - 0.5 );
+    var phi = 2 * Math.PI * ( parameters.azimuth - 0.5 );
+
+    light.position.x = parameters.distance * Math.cos( phi );
+    light.position.y = parameters.distance * Math.sin( phi ) * Math.sin( theta );
+    light.position.z = parameters.distance * Math.sin( phi ) * Math.cos( theta );
+
+    sky.material.uniforms[ 'sunPosition' ].value = light.position.copy( light.position );
+    water.material.uniforms[ 'sunDirection' ].value.copy( light.position ).normalize();
+
+    cubeCamera.update( renderer, sky );
+
+}
+
+updateSun();
+
+// GUI
+var gui = new dat.GUI();
+
+var folder = gui.addFolder( 'Sky' );
+folder.add( parameters, 'inclination', 0, 0.5, 0.0001 ).onChange( updateSun ).name( 'Inclination' );
+folder.add( parameters, 'azimuth', 0, 1, 0.0001 ).onChange( updateSun ).name( 'Azimuth' );
+//folder.add( parameters, 'distance', 300, 500, 1 ).onChange( updateSun );
+//folder.add( GuiControl, 'DrawSun').name('Sun');
+folder.open();
+
+var uniforms = water.material.uniforms;
+
+var folder = gui.addFolder( 'Water' );
+folder.add( uniforms.distortionScale, 'value', 0, 50, 1 ).name( 'Scale' );
+folder.add( uniforms.alpha, 'value', 1, 10, 0.1 ).name( 'Size' );
+folder.add( uniforms.time, 'value', 1, 1000, 1 ).name( 'Time' );
+//folder.add( GuiControl, 'waterfog').name( 'Fog' );
+folder.addColor(uniforms.sunColor, 'value').name('Suncolor');
+folder.addColor(uniforms.waterColor, 'value').name('WaterColor');
+//folder.add( GuiControl, 'DrawWater').name('Water');
+folder.open();
+
+}
+
+
+var cloud_b;
+
+function Blackcloudinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/cloud_black.png");
+        var geom = new THREE.PlaneGeometry(700,700);
+        var material = new THREE.MeshBasicMaterial({
+            transparent: GuiControl.cloudtransparent_b,
+            opacity: GuiControl.cloudopacity_b,
+            color: GuiControl.cloudcolor_b,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 100; i++) {
+            cloud_b = new THREE.Mesh(geom, material);
+            cloud_b.position.set(
+                (Math.random() * 1000 ) * range, 
+                500, 
+                (Math.random() * -1000 ) * range
+                );
+
+            cloud_b.rotation.x * Math.random() * range;
+            cloud_b.rotation.y * Math.random() * range;
+            cloud_b.rotation.z * Math.random() * range;
+
+            cloudparticles_b.push(cloud_b);
+            scene.add(cloud_b);
+        }
+}
+
+
+var cloud_w;
+
+function Whitecloudinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/cloud_white.png");
+        var geom = new THREE.PlaneGeometry(500,500);
+        var material = new THREE.MeshBasicMaterial({
+            transparent: GuiControl.cloudtransparent_w,
+            opacity: GuiControl.cloudopacity_w,
+            color: GuiControl.cloudcolor_w,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 100; i++) {
+            cloud_w = new THREE.Mesh(geom, material);
+            cloud_w.position.set(
+                (Math.random() * -1000) * range, 
+                500, 
+                (Math.random() * 1000) * range
+                );
+
+            cloud_w.rotation.x * Math.random() * range;
+            cloud_b.rotation.y * Math.random() * range;
+            cloud_b.rotation.z * Math.random() * range;
+
+            cloudparticles_w.push(cloud_w);
+            scene.add(cloud_w);
+        }
+}
+
+// Old version with no gui interactive attribute :s
+////////////////////////////////////////////////////
+// function Whitecloudinit(){
+         
+//     let loader_wc = new THREE.TextureLoader();
+//      loader_wc.load( "src/images/cloud_white.png", function ( texture ){
+//      cloudGeo_w = new THREE.PlaneBufferGeometry(500, 500);
+//      cloudMaterial_w = new THREE.MeshBasicMaterial({
+//          map: texture,
+//          transparent: true
+//      })
+
+//      for(let p = 0; p < 100; p++ ){
+//          cloud_w = new THREE.Mesh(cloudGeo_w, cloudMaterial_w);
+//          cloud_w.position.set(
+//               Math.random() * 800 - 1500,
+//               500,
+//               Math.random() * 500 - 1450
+//          );
+//          cloud_w.material.opacity = 0.8;
+//          cloudparticles_w.push(cloud_w);
+//          scene.add(cloud_w);
+//      }
+//     });
+// }
+////////////////////////////////////////////////////
+
+var rain;
+function Raininit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/rain.png");
+        var geom = new THREE.Geometry(500,500);
+        var material = new THREE.PointsMaterial({
+            size: GuiControl.rainsize,
+            transparent: GuiControl.raintransparent,
+            opacity: GuiControl.rainopacity,
+            vertexColors: GuiControl.rainvertexcolors,
+            sizeAttenuation: GuiControl.rainsizeattenuation,
+            color: GuiControl.raincolor,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 15000; i++) {
+            var particle = new THREE.Vector3(
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2
+                );
+            particle.velocityY = 0.1 + Math.random() / 5;
+            particle.velocityX = (Math.random() - 0.5) / 3;
+            particle.velocityZ = (Math.random() - 0.5) / 3;
+            geom.vertices.push(particle);
+            var color = new THREE.Color(0xffffff);
+            geom.colors.push(color);
+        }
+
+        rain = new THREE.Points(geom, material);
+        rain.verticesNeedUpdate = true;
+
+        scene.add(rain);
+    }
+
+
+var snow;
+function Snowinit(range) {
+        var texture = new THREE.TextureLoader().load("/src/images/snowflake7_alpha.png");
+        var geom = new THREE.Geometry(500,500);
+        var material = new THREE.PointsMaterial({
+            size: GuiControl.snowsize,
+            transparent: GuiControl.snowtransparent,
+            opacity: GuiControl.snowopacity,
+            vertexColors: GuiControl.snowvertexcolors,
+            sizeAttenuation: GuiControl.snowsizeattenuation,
+            color: GuiControl.snowcolor,
+            map:texture,
+            depthTest: false
+        });
+
+        for (var i = 0; i < 15000; i++) {
+            var particle = new THREE.Vector3(
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2, 
+                Math.random() * range - range / 2
+                );
+            particle.velocityY = 0.1 + Math.random() / 5;
+            particle.velocityX = (Math.random() - 0.5) / 3;
+            particle.velocityZ = (Math.random() - 0.5) / 3;
+            geom.vertices.push(particle);
+            var color = new THREE.Color(0xffffff);
+            geom.colors.push(color);
+        }
+
+        snow = new THREE.Points(geom, material);
+        snow.verticesNeedUpdate = true;
+
+        scene.add(snow);
+    }
+
+
+</script>
+</body>
+</html>
