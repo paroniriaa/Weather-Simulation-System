@@ -23,7 +23,6 @@
     <div id="container"></div>
     <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;"></div>
     <script src = "src/three.js"></script>
-    <script src = "src/threex.terrain.js"></script>
     <script src = "src/OrbitControls.js"></script>
     <script src = "src/ImprovedNoise.js"></script>
     <script src = "src/WebGL.js"></script>
@@ -94,17 +93,17 @@ gui.remember(GuiControl);
     this.cloudcolor_w = 0xffffff;
     this.cloudtransparent_w = true;
 
-    this.rainrange = 1500;
+    this.rainrange = 1000;
     this.rainsize = 2;
-    this.rainopacity = 0.6;
+    this.rainopacity = 0.8;
     this.raincolor = 0xffffff;
     this.raintransparent = true;
     this.rainvertexcolors = true;
     this.rainsizeattenuation = true;
 
-    this.snowrange = 1500;
+    this.snowrange = 1000;
     this.snowsize = 2;
-    this.snowopacity = 0.6;
+    this.snowopacity = 0.8;
     this.snowcolor = 0xffffff;
     this.snowtransparent = true;
     this.snowvertexcolors = true;
@@ -124,48 +123,43 @@ gui.remember(GuiControl);
 
  
      var folder = gui.addFolder( 'Evnet' );
-     folder.add(GuiControl, 'rotatesystem').onChange(redraw).name('Autoroate');
+     folder.add(GuiControl, 'rotatesystem').onChange(redraw_ec).name('Autoroate');
     
      var folder = gui.addFolder( 'Wind' );
-     folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw).name('Wind-X');
-     folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw).name('Wind-Z');
-     folder.open();
+     folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw_ec).name('Wind-X');
+     folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw_ec).name('Wind-Z');
 
      var folder = gui.addFolder( 'Rain' );
-     folder.add(GuiControl, 'rainrange',100,10000).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'rainsize',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'rainopacity', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'raincolor').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'raintransparent').onChange(redraw).name('Transparent');
-     folder.add(GuiControl, 'rainvertexcolors').onChange(redraw).name('Texcolor');
-     folder.add(GuiControl, 'rainsizeattenuation').onChange(redraw).name('Attenuation');
-     folder.open();
+     folder.add(GuiControl, 'rainrange',100,5000).onChange(redraw_ec).name('Range');
+     folder.add(GuiControl, 'rainsize',0.1,20).onChange(redraw_ec).name('Size');
+     folder.add(GuiControl, 'rainopacity', 0, 1).onChange(redraw_ec).name('Opacity');
+     folder.addColor(GuiControl, 'raincolor').onChange(redraw_ec).name('Color');
+     folder.add(GuiControl, 'raintransparent').onChange(redraw_ec).name('Transparent');
+     folder.add(GuiControl, 'rainvertexcolors').onChange(redraw_ec).name('Texcolor');
+     folder.add(GuiControl, 'rainsizeattenuation').onChange(redraw_ec).name('Attenuation');
      
      var folder = gui.addFolder( 'Snow' );
-     folder.add(GuiControl, 'snowrange',100,10000).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'snowsize',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'snowopacity', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'snowcolor').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'snowtransparent').onChange(redraw).name('Transparent');
-     folder.add(GuiControl, 'snowvertexcolors').onChange(redraw).name('Texcolor');
-     folder.add(GuiControl, 'snowsizeattenuation').onChange(redraw).name('Attenuation');
-     folder.open();
+     folder.add(GuiControl, 'snowrange',100,5000).onChange(redraw_ec).name('Range');
+     folder.add(GuiControl, 'snowsize',0.1,20).onChange(redraw_ec).name('Size');
+     folder.add(GuiControl, 'snowopacity', 0, 1).onChange(redraw_ec).name('Opacity');
+     folder.addColor(GuiControl, 'snowcolor').onChange(redraw_ec).name('Color');
+     folder.add(GuiControl, 'snowtransparent').onChange(redraw_ec).name('Transparent');
+     folder.add(GuiControl, 'snowvertexcolors').onChange(redraw_ec).name('Texcolor');
+     folder.add(GuiControl, 'snowsizeattenuation').onChange(redraw_ec).name('Attenuation');
 
      var folder = gui.addFolder( 'BlackCloud' );
-     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'cloudtransparent_b').onChange(redraw).name('Transparent');
-     folder.open();
+     folder.add(GuiControl, 'blackcloudrange',1,10).onChange(redrwa_bc).name('Range');
+     folder.add(GuiControl, 'cloudsize_b',0.1,10).onChange(redrwa_bc).name('Size');
+     folder.add(GuiControl, 'cloudopacity_b', 0, 1).onChange(redrwa_bc).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_b').onChange(redrwa_bc).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_b').onChange(redrwa_bc).name('Transparent');
 
      var folder = gui.addFolder( 'WhiteCloud' );
-     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redraw).name('Range');
-     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redraw).name('Size');
-     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redraw).name('Opacity');
-     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redraw).name('Color');
-     folder.add(GuiControl, 'cloudtransparent_w').onChange(redraw).name('Transparent');
-     folder.open();
+     folder.add(GuiControl, 'whitecloudrange',1,10).onChange(redrwa_wc).name('Range');
+     folder.add(GuiControl, 'cloudsize_w',0.1,10).onChange(redrwa_wc).name('Size');
+     folder.add(GuiControl, 'cloudopacity_w', 0, 1).onChange(redrwa_wc).name('Opacity');
+     folder.addColor(GuiControl, 'cloudcolor_w').onChange(redrwa_wc).name('Color');
+     folder.add(GuiControl, 'cloudtransparent_w').onChange(redrwa_wc).name('Transparent');
 
 
 stats = new Stats();
@@ -185,6 +179,40 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 controls.handleResize();
 
 }
+
+function redraw_ec(){
+
+    if (snow){
+        scene.remove(snow);
+        Snowinit(GuiControl.snowrange);
+    }
+    if (rain){
+        scene.remove(rain);
+        Raininit(GuiControl.rainrange);
+    }
+
+    controls.autoRotate = GuiControl.rotatesystem;
+
+}
+
+function redrwa_bc(){
+
+    cloudparticles_b = [];
+    scene.remove(cloud_b);
+    scene.children.cloud_b={};
+    Blackcloudinit(GuiControl.blackcloudrange);
+
+}
+
+function redrwa_wc(){
+
+    cloudparticles_w = [];
+    scene.remove(cloud_w);
+    scene.children.cloud_w={};
+    Whitecloudinit(GuiControl.whitecloudrange);
+
+}
+
 
 function redraw() {
 
@@ -217,28 +245,48 @@ function redraw() {
 function render() {
 
 var time = performance.now() * 0.001;
+
 water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
 
  cloudparticles_b.forEach(function(p){
- if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
- if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+
+ if(GuiControl.windpower_x > 0){
+     p.tranlationX += GuiControl.windpower_x
+     }
+
+ if(GuiControl.windpower_z > 0){
+     p.tranlationZ += GuiControl.windpower_z
+     };
+
   p.lookAt(camera.position);
  });
 
  cloudparticles_w.forEach(function(p){
- if(GuiControl.windpower_x > 0){p.tranlationX += GuiControl.windpower_x}
- if(GuiControl.windpower_z > 0){p.tranlationZ += GuiControl.windpower_z};
+
+ if(GuiControl.windpower_x > 0){
+     p.tranlationX += GuiControl.windpower_x
+     }
+
+ if(GuiControl.windpower_z > 0){
+     p.tranlationZ += GuiControl.windpower_z
+     };
+
   p.lookAt(camera.position);
  });
 
 var snowvertices = snow.geometry.vertices;
+
 snowvertices.forEach(function (v) {
+
     if(GuiControl.windpower_x > 0){
+
         v.x += (GuiControl.windpower_x + Math.random() * 10);
 
         if (v.x >= 500) {
+
             v.x = -500 - (v.velocityX) - Math.random() * 10;
         }
+
         v.y = v.y - (v.velocityY)* 1.5;
         v.x = v.x - (v.velocityX)*.5;
         v.z = v.z - (v.velocityZ)*.5;
@@ -246,11 +294,14 @@ snowvertices.forEach(function (v) {
     };
     
     if(GuiControl.windpower_z > 0){
+
         v.z += GuiControl.windpower_z;
 
         if (v.z >= 500) {
+
             v.z = -500 - (v.velocityZ) - Math.random() * 10;
         }
+
         v.y = v.y - (v.velocityY)* 1.5;
         v.x = v.x - (v.velocityX)*.5;
         v.z = v.z - (v.velocityZ)*.5;
@@ -273,8 +324,11 @@ snow.geometry.verticesNeedUpdate = true;
 
 
 var rainvertices = rain.geometry.vertices;
+
 rainvertices.forEach(function (v) {
+
     if(GuiControl.windpower_x > 0){
+
         v.x += (GuiControl.windpower_x + Math.random() * 10);
 
         if (v.x >= 500) {
@@ -287,9 +341,11 @@ rainvertices.forEach(function (v) {
     };
     
     if(GuiControl.windpower_z > 0){
+
         v.z += GuiControl.windpower_z;
 
         if (v.z >= 500) {
+            
             v.z = -500 - (v.velocityZ) - Math.random() * 10;
         }
         v.y = v.y - (v.velocityY)* 30;
@@ -331,8 +387,6 @@ Raininit(GuiControl.rainrange);
 Snowinit(GuiControl.snowrange);
 animate();
 
-
-
 function Terraininit() {
 
 var Terriandata = generateHeight( worldWidth, worldDepth );
@@ -353,10 +407,18 @@ for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
 texture = new THREE.CanvasTexture( generateTexture( Terriandata, worldWidth, worldDepth ) );
 texture.wrapS = THREE.ClampToEdgeWrapping;
 texture.wrapT = THREE.ClampToEdgeWrapping;
-
+    
 // Try to implement the mix-mapping with different height for terrian but run out of time :CCC
 
-mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { map: texture } ) );
+ var texture = new THREE.TextureLoader().load("/src/images/rock1.png", function ( texture ) {
+
+texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+} );
+
+var material = new THREE.MeshBasicMaterial({map:texture});
+mesh = new THREE.Mesh( geometry,material);
+
 scene.add( mesh );
 }
 
@@ -518,14 +580,12 @@ function updateSun() {
 updateSun();
 
 // GUI
-var gui = new dat.GUI();
 
 var folder = gui.addFolder( 'Sky' );
 folder.add( parameters, 'inclination', 0, 0.5, 0.0001 ).onChange( updateSun ).name( 'Inclination' );
 folder.add( parameters, 'azimuth', 0, 1, 0.0001 ).onChange( updateSun ).name( 'Azimuth' );
 //folder.add( parameters, 'distance', 300, 500, 1 ).onChange( updateSun );
 //folder.add( GuiControl, 'DrawSun').name('Sun');
-folder.open();
 
 var uniforms = water.material.uniforms;
 
@@ -537,7 +597,6 @@ folder.add( uniforms.time, 'value', 1, 1000, 1 ).name( 'Time' );
 folder.addColor(uniforms.sunColor, 'value').name('Suncolor');
 folder.addColor(uniforms.waterColor, 'value').name('WaterColor');
 //folder.add( GuiControl, 'DrawWater').name('Water');
-folder.open();
 
 }
 
