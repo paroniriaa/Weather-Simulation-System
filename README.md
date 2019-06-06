@@ -54,11 +54,11 @@ Yu-Hsuan Liu:
 - 
 
 ## Reference
-Sky: https://threejs.org/examples/?q=sky#webgl_shaders_sky  
+- Sky: https://threejs.org/examples/?q=sky#webgl_shaders_sky  
 This explains how to use sky library inside three.js.  
-Water: https://threejs.org/examples/?q=ocean#webgl_shaders_ocean  
+- Water: https://threejs.org/examples/?q=ocean#webgl_shaders_ocean  
 This explains how to use sky library inside three.js.  
-Terrain: https://icecreamyou.github.io/THREE.Terrain/  
+- Terrain: https://threejs.org/examples/webgl_geometry_terrain.html
 This gives us the actual idea of how to implement Perlin Noise and Diamond Square Algorithm  
-Clouds:  
+- Clouds:  
 
