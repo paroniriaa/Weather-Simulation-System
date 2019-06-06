@@ -66,5 +66,5 @@ Nevertheless, this is only a rough classification as we helped each other achiev
 This explains how to use sky library inside three.js.  
 - Water: https://threejs.org/examples/?q=ocean#webgl_shaders_ocean  
 This explains how to use sky library inside three.js.  
-- Terrain: https://threejs.org/examples/webgl_geometry_terrain.html
+- Terrain: https://threejs.org/examples/webgl_geometry_terrain.html  
 This gives us the idea of how to implement Perlin Noise and Diamond Square Algorithm  
