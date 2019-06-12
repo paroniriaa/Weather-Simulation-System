@@ -25,6 +25,7 @@
     <script src = "src/three.js"></script>
     <script src = "src/OrbitControls.js"></script>
     <script src = "src/ImprovedNoise.js"></script>
+    <script src = "src/noise.js"></script>
     <script src = "src/WebGL.js"></script>
     <script src = "src/stats.min.js"></script>
     <script src = "src/Sky.js"></script>
@@ -38,7 +39,9 @@ var camera, controls, scene, renderer,light;
 var mesh, texture;
 var water, cloud;
 var flash, rain, rainGeo, rainCount = 15000;
-var cloudparticles_w=[], cloudparticles_b=[];
+
+var cloudparticles_w = new THREE.Group(); 
+var cloudparticles_b = new THREE.Group();
 
 var worldWidth = window.innerWidth, worldDepth = window.innerHeight,
 worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
@@ -52,14 +55,10 @@ scene.background = new THREE.Color( 0xbfd1e5 );
 //FOG
 scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0002);
 
-//100
+
 camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 20000 );
 camera.position.set(30,30,100);
-// var skyboxgeometry = new THREE.CubeGeometry(15000, 15000, 15000);
-// var skyboxMaterials =  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load( 'src/images/nx.jpg'), side: THREE.DoubleSide });
-// var skyboxMaterials = new THREE.MeshFaceMaterial(skyboxMaterials);
-// var skybox = new THREE.Mesh(skyboxgeometry, skyboxMaterials);
-// scene.add(skybox); 
+
 
 light = new THREE.DirectionalLight( 0xffffff, 0.8 );
 scene.add( light );
@@ -114,6 +113,16 @@ gui.remember(GuiControl);
     this.windpower_z = 0;
     this.rotatesystem = false;
 
+    this.christmastimebab = "src/music/its christmas time bab!.mp3";
+    this.chickentoobeauty = "src/music/ChickenTooBeauty.mp3";
+    this.GETHIGHB = "src/music/GET HIGH B.flac";
+
+    this.sound_1v = 0;
+    this.sound_2v = 0;
+    this.sound_3v = 0;
+
+    this.analyse = false;
+
     // this.DrawTerrian = true,
     // this.DrawSun = true,
     // this.DrawWater = true,
@@ -122,12 +131,57 @@ gui.remember(GuiControl);
  };
 
  
-     var folder = gui.addFolder( 'Evnet' );
-     folder.add(GuiControl, 'rotatesystem').onChange(redraw_ec).name('Autoroate');
+var listener = new THREE.AudioListener();
+camera.add( listener );
+var audioLoader = new THREE.AudioLoader();
+
+var sound_1 = new THREE.Audio( listener );
+var sound_2 = new THREE.Audio( listener );
+var sound_3 = new THREE.Audio( listener );
+
+// // var fftSize = 128;
+// // var analyser;
+// // var mediaElement;
+
+function MUSICTIMEBAB (musictime, sound) {
+   audioLoader.load( musictime, function( buffer ) {
+       sound.setBuffer( buffer );
+       sound.setLoop( true );
+       sound.setVolume( 0 );
+    //    sound.play();
+    //    sound.setMediaElementSource( musictime );
+   });
+//    analyser = new THREE.AudioAnalyser( sound, fftSize );
+// //    if (this.GuiControl.analyse == true){
+//     // mediaElement = new Audio (musictime);
+//    mediaElement = analyser.getAverageFrequency();
+
+// 
+
+}
     
+ MUSICTIMEBAB(GuiControl.christmastimebab, sound_1);
+ MUSICTIMEBAB(GuiControl.chickentoobeauty, sound_2);
+ MUSICTIMEBAB(GuiControl.GETHIGHB, sound_3);
+
+
+
+    var folder = gui.addFolder( 'Event' );
+    folder.add(GuiControl, 'rotatesystem').onChange(redraw_ec).name('Autoroate');
+
+    folder.add(GuiControl, 'sound_1v',0,1,0.01).onChange( function () {
+                    sound_1.setVolume( GuiControl.sound_1v );
+                    sound_1.play();}).name('Chirstmas Time!');
+    folder.add(GuiControl, 'sound_2v',0,1,0.01).onChange( function () {
+                    sound_2.setVolume( GuiControl.sound_2v );
+                    sound_2.play();}).name('BeautyChicken');
+    folder.add(GuiControl, 'sound_3v',0,1,0.01).onChange( function () {
+                    sound_3.setVolume( GuiControl.sound_3v );
+                    sound_3.play();}).name('GET HIGH');
+                    
      var folder = gui.addFolder( 'Wind' );
-     folder.add(GuiControl, 'windpower_x',0,50).onChange(redraw_ec).name('Wind-X');
-     folder.add(GuiControl, 'windpower_z',0,50).onChange(redraw_ec).name('Wind-Z');
+     folder.add(GuiControl, 'windpower_x',0,5,0.1).onChange(redraw_ec).name('Wind-X');
+     folder.add(GuiControl, 'windpower_z',0,5,0.1).onChange(redraw_ec).name('Wind-Z');
 
      var folder = gui.addFolder( 'Rain' );
      folder.add(GuiControl, 'rainrange',100,5000).onChange(redraw_ec).name('Range');
@@ -197,18 +251,14 @@ function redraw_ec(){
 
 function redrwa_bc(){
 
-    cloudparticles_b = [];
-    scene.remove(cloud_b);
-    scene.children.cloud_b={};
+    scene.remove(cloudparticles_b);
     Blackcloudinit(GuiControl.blackcloudrange);
 
 }
 
 function redrwa_wc(){
 
-    cloudparticles_w = [];
-    scene.remove(cloud_w);
-    scene.children.cloud_w={};
+    scene.remove(cloudparticles_w);
     Whitecloudinit(GuiControl.whitecloudrange);
 
 }
@@ -217,16 +267,12 @@ function redrwa_wc(){
 function redraw() {
 
     if (cloud_b){
-        cloudparticles_b = [];
-        // scene.remove(cloud_b);
-        scene.children.cloud_b={};
+        scene.remove(cloudparticles_b);
         Blackcloudinit(GuiControl.blackcloudrange);
     }
 
     if (cloud_w){
-        cloudparticles_w = [];
-        // scene.remove(cloud_w);
-        scene.children.cloud_w={};
+        scene.remove(cloudparticles_w);
         Whitecloudinit(GuiControl.whitecloudrange);
     }
 
@@ -242,37 +288,53 @@ function redraw() {
     controls.autoRotate = GuiControl.rotatesystem;
 }
 
+
 function render() {
+
+// analyser = new THREE.AudioAnalyser( sound, fftSize );
+// //    if (this.GuiControl.analyse == true){
+//     // mediaElement = new Audio (musictime);
+// mediaElement = analyser.getAverageFrequency();
 
 var time = performance.now() * 0.001;
 
 water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
 
- cloudparticles_b.forEach(function(p){
+// noise.seed(Math.random());
 
- if(GuiControl.windpower_x > 0){
-     p.tranlationX += GuiControl.windpower_x
-     }
+// var watervertices = water.geometry.vertices;  
 
- if(GuiControl.windpower_z > 0){
-     p.tranlationZ += GuiControl.windpower_z
-     };
+// watervertices.forEach(function(i){
 
-  p.lookAt(camera.position);
- });
+//     var noisy = noise.simplex3(i.x,i.y,i.z)*0.0002;
 
- cloudparticles_w.forEach(function(p){
+//     // i.x+=noisy*mediaElement;
+//     i.y+=noisy*mediaElement;
+//     // i.z+=noisy*mediaElement;
+// });
 
- if(GuiControl.windpower_x > 0){
-     p.tranlationX += GuiControl.windpower_x
-     }
+// // water.rotation.x += 1*mediaElement;
+// // water.rotation.y += 1*mediaElement;
+// // water.rotation.z += 1*mediaElement;
 
- if(GuiControl.windpower_z > 0){
-     p.tranlationZ += GuiControl.windpower_z
-     };
+// analyser.getFrequencyData();
+// water.geometry.verticesNeedUpdate = true;
 
-  p.lookAt(camera.position);
- });
+
+
+//  cloudparticles_b.forEach(function(p){
+
+//     p.lookAt(camera.position);
+//  });
+
+//  cloudparticles_w.forEach(function(p){
+
+
+//    p.lookAt(camera.position);
+//  });
+
+cloudparticles_b.children.forEach(function(p){ p.lookAt(camera.position);});
+cloudparticles_w.children.forEach(function(p){ p.lookAt(camera.position);});
 
 var snowvertices = snow.geometry.vertices;
 
@@ -280,11 +342,11 @@ snowvertices.forEach(function (v) {
 
     if(GuiControl.windpower_x > 0){
 
-        v.x += (GuiControl.windpower_x + Math.random() * 10);
+        v.x += (GuiControl.windpower_x + Math.random() * 5);
 
         if (v.x >= 500) {
 
-            v.x = -500 - (v.velocityX) - Math.random() * 10;
+            v.x = -500 - (v.velocityX) - Math.random() * 5;
         }
 
         v.y = v.y - (v.velocityY)* 1.5;
@@ -295,11 +357,11 @@ snowvertices.forEach(function (v) {
     
     if(GuiControl.windpower_z > 0){
 
-        v.z += GuiControl.windpower_z;
+        v.z += (GuiControl.windpower_z + Math.random() * 5);
 
         if (v.z >= 500) {
 
-            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+            v.z = -500 - (v.velocityZ) - Math.random() * 5;
         }
 
         v.y = v.y - (v.velocityY)* 1.5;
@@ -329,10 +391,10 @@ rainvertices.forEach(function (v) {
 
     if(GuiControl.windpower_x > 0){
 
-        v.x += (GuiControl.windpower_x + Math.random() * 10);
+        v.x += (GuiControl.windpower_x + Math.random() * 5);
 
         if (v.x >= 500) {
-            v.x = -500 - (v.velocityX) - Math.random() * 10;
+            v.x = -500 - (v.velocityX) - Math.random() * 5;
         }
         v.y = v.y - (v.velocityY)* 30;
         v.x = v.x - (v.velocityX)*.5;
@@ -342,11 +404,11 @@ rainvertices.forEach(function (v) {
     
     if(GuiControl.windpower_z > 0){
 
-        v.z += GuiControl.windpower_z;
+        v.z += (GuiControl.windpower_x + Math.random() * 5);
 
         if (v.z >= 500) {
             
-            v.z = -500 - (v.velocityZ) - Math.random() * 10;
+            v.z = -500 - (v.velocityZ) - Math.random() * 5;
         }
         v.y = v.y - (v.velocityY)* 30;
         v.x = v.x - (v.velocityX)*.5;
@@ -511,7 +573,8 @@ return canvasScaled;
 
 
 function Sky_Waterinit() {
-    var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
+
+    var waterGeometry = new THREE.PlaneGeometry( 12500, 12500 );
 
 water = new THREE.Water(
     waterGeometry,
@@ -529,7 +592,6 @@ water = new THREE.Water(
         sunColor: 0x020202,
         waterColor: 0x000000,
         distortionScale: 5,
-        fog: GuiControl.waterfog
     }
 );
 
@@ -613,7 +675,7 @@ function Blackcloudinit(range) {
             map:texture,
             depthTest: false
         });
-
+ 
         for (var i = 0; i < 100; i++) {
             cloud_b = new THREE.Mesh(geom, material);
             cloud_b.position.set(
@@ -626,10 +688,12 @@ function Blackcloudinit(range) {
             cloud_b.rotation.y * Math.random() * range;
             cloud_b.rotation.z * Math.random() * range;
 
-            cloudparticles_b.push(cloud_b);
-            scene.add(cloud_b);
+            cloudparticles_b.add(cloud_b);
+            // scene.add(cloud_b);
         }
-}
+        scene.add(cloudparticles_b);
+
+    }
 
 
 var cloud_w;
@@ -657,9 +721,10 @@ function Whitecloudinit(range) {
             cloud_b.rotation.y * Math.random() * range;
             cloud_b.rotation.z * Math.random() * range;
 
-            cloudparticles_w.push(cloud_w);
-            scene.add(cloud_w);
+            cloudparticles_w.add(cloud_w);
+            // scene.add(cloud_w);
         }
+        scene.add(cloudparticles_w);
 }
 
 // Old version with no gui interactive attribute :s
@@ -760,7 +825,10 @@ function Snowinit(range) {
         scene.add(snow);
     }
 
-
 </script>
 </body>
 </html>
+
+
+
+ 
