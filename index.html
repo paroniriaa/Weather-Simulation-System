@@ -472,7 +472,7 @@ texture.wrapT = THREE.ClampToEdgeWrapping;
     
 // Try to implement the mix-mapping with different height for terrian but run out of time :CCC
 
- var texture = new THREE.TextureLoader().load("/src/images/rock1.png", function ( texture ) {
+ var texture = new THREE.TextureLoader().load('src/images/rock1.png', function ( texture ) {
 
 texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
@@ -666,7 +666,7 @@ folder.addColor(uniforms.waterColor, 'value').name('WaterColor');
 var cloud_b;
 
 function Blackcloudinit(range) {
-        var texture = new THREE.TextureLoader().load("/src/images/cloud_black.png");
+        var texture = new THREE.TextureLoader().load('src/images/cloud_black.png');
         var geom = new THREE.PlaneGeometry(700,700);
         var material = new THREE.MeshBasicMaterial({
             transparent: GuiControl.cloudtransparent_b,
@@ -699,7 +699,7 @@ function Blackcloudinit(range) {
 var cloud_w;
 
 function Whitecloudinit(range) {
-        var texture = new THREE.TextureLoader().load("/src/images/cloud_white.png");
+        var texture = new THREE.TextureLoader().load('src/images/cloud_white.png');
         var geom = new THREE.PlaneGeometry(500,500);
         var material = new THREE.MeshBasicMaterial({
             transparent: GuiControl.cloudtransparent_w,
@@ -756,7 +756,7 @@ function Whitecloudinit(range) {
 
 var rain;
 function Raininit(range) {
-        var texture = new THREE.TextureLoader().load("/src/images/rain.png");
+        var texture = new THREE.TextureLoader().load('src/images/rain.png');
         var geom = new THREE.Geometry(500,500);
         var material = new THREE.PointsMaterial({
             size: GuiControl.rainsize,
@@ -792,7 +792,7 @@ function Raininit(range) {
 
 var snow;
 function Snowinit(range) {
-        var texture = new THREE.TextureLoader().load("/src/images/snowflake7_alpha.png");
+        var texture = new THREE.TextureLoader().load('src/images/snowflake7_alpha.png');
         var geom = new THREE.Geometry(500,500);
         var material = new THREE.PointsMaterial({
             size: GuiControl.snowsize,
